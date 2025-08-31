@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mdlottery DApp</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 32px;
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+        }
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-primary {
+            background-color: #4f46e5;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #4338ca;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+        }
+        .btn-secondary {
+            background-color: #e2e8f0;
+            color: #4a5568;
+        }
+        .btn-secondary:hover {
+            background-color: #cbd5e0;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+        }
+        .input-field {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e0;
+            border-radius: 8px;
+            margin-top: 8px;
+            margin-bottom: 16px;
+            box-sizing: border-box;
+        }
+        .message-box {
+            background-color: #e0f2fe;
+            color: #0284c7;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border: 1px solid #a7d9f7;
+            font-size: 0.9rem;
+            text-align: left;
+            word-wrap: break-word;
+        }
+        .error-box {
+            background-color: #fee2e2;
+            color: #dc2626;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border: 1px solid #fca5a5;
+            font-size: 0.9rem;
+            text-align: left;
+            word-wrap: break-word;
+        }
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 16px;
+        }
+        .info-text {
+            color: #4a5568;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #fff;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Styles for the new connect wallet section */
+        .connect-wallet-section {
+            background-color: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 32px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+            display: flex; /* Use flexbox for centering */
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .connect-wallet-section h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .connect-wallet-section .fox-icon {
+            width: 40px;
+            height: 40px;
+        }
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Connect Wallet Section - Initially shown if not connected -->
+    <div id="connectWalletSection" class="connect-wallet-section">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask Fox" class="fox-icon">
+            Connect to MetaMask
+        </h1>
+        <button id="connectWalletBtn" class="btn btn-primary mb-4">Connect Wallet</button>
+        <p id="walletAddressDisplay" class="info-text text-gray-700">Not connected</p>
+        <div id="connectError" class="error-box hidden"></div>
+    </div>
+
+    <!-- Main DApp Content - Initially hidden until wallet is connected -->
+    <div id="mainDAppContent" class="container hidden">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">Mdlottery DApp</h1>
+
+        <div id="statusMessage" class="message-box hidden"></div>
+        <div id="errorMessage" class="error-box hidden"></div>
+
+        <div class="mb-6">
+            <p class="info-text">Manager: <span id="managerAddress" class="font-mono text-sm text-gray-600">Loading...</span></p>
+            <p class="info-text">Contract Address: <span id="contractAddress" class="font-mono text-sm text-gray-600">Loading...</span></p>
+            <p class="info-text">Current Players: <span id="playersCount" class="font-bold text-indigo-600">0</span></p>
+            <p class="info-text">Lottery Balance: <span id="lotteryBalance" class="font-bold text-green-600">0 ETH</span></p>
+            <p class="info-text">Last Winner: <span id="lastWinner" class="font-mono text-sm text-gray-600">N/A</span></p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Participate Section -->
+            <div class="p-6 border border-gray-200 rounded-lg shadow-sm">
+                <h2 class="section-title">Participate in Lottery</h2>
+                <input type="number" id="entryAmount" class="input-field" placeholder="Enter ETH amount (e.g., 1.5)" step="0.01" min="1.01">
+                <button id="participateBtn" class="btn btn-primary w-full">
+                    <span id="participateSpinner" class="spinner hidden"></span>
+                    Participate
+                </button>
+            </div>
+
+            <!-- Manager Actions Section -->
+            <div class="p-6 border border-gray-200 rounded-lg shadow-sm">
+                <h2 class="section-title">Manager Actions</h2>
+                <button id="pickWinnerBtn" class="btn btn-primary w-full mb-4">
+                    <span id="pickWinnerSpinner" class="spinner hidden"></span>
+                    Pick Winner
+                </button>
+                <button id="getPlayersBtn" class="btn btn-secondary w-full mb-4">
+                    <span id="getPlayersSpinner" class="spinner hidden"></span>
+                    Refresh Players List
+                </button>
+                <div id="playersList" class="text-left text-sm text-gray-700 max-h-40 overflow-y-auto bg-gray-50 p-3 rounded-md border border-gray-200">
+                    <p>No players yet.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ethers.js CDN - Changed to Cloudflare CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+    <script>
+        // --- Contract ABI (Application Binary Interface) ---
+        // This ABI is generated from your Mdlottery.sol contract after compilation.
+        // Path: C:\Users\Lenovo\Desktop\dapp\artifacts\contracts\Mdlottery.sol\Mdlottery.json
+        const MDLOTTERY_ABI = [
+            {
+      "inputs": [],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [],
+      "name": "LotteryReset",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "playerAddress",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amountPaid",
+          "type": "uint256"
+        }
+      ],
+      "name": "PlayerParticipated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "winnerAddress",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "prizeAmount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "randomIndex",
+          "type": "uint256"
+        }
+      ],
+      "name": "WinnerPicked",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "getContractBalance",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getPlayers",
+      "outputs": [
+        {
+          "internalType": "address payable[]",
+          "name": "",
+          "type": "address[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "manager",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "participate",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "pickWinner",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "players",
+      "outputs": [
+        {
+          "internalType": "address payable",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "winner",
+      "outputs": [
+        {
+          "internalType": "address payable",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "stateMutability": "payable",
+      "type": "receive"
+    }
+  ]
+;
+
+
+        // --- Contract Address (UPDATE THIS AFTER DEPLOYMENT) ---
+        // IMPORTANT: Replace this with the actual address from your `npx hardhat run` output
+        // Example: const MDLOTTERY_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+        const MDLOTTERY_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; // Placeholder, update this!
+
+        let provider;
+        let signer;
+        let mdlotteryContract;
+        let managerAddress; // Store manager's address for UI checks
+
+        // UI Elements
+        const connectWalletSection = document.getElementById('connectWalletSection');
+        const mainDAppContent = document.getElementById('mainDAppContent');
+        const connectWalletBtn = document.getElementById('connectWalletBtn');
+        const walletAddressDisplay = document.getElementById('walletAddressDisplay');
+        const connectError = document.getElementById('connectError');
+
+        const statusMessage = document.getElementById('statusMessage');
+        const errorMessage = document.getElementById('errorMessage');
+        const managerAddressSpan = document.getElementById('managerAddress');
+        const contractAddressSpan = document.getElementById('contractAddress');
+        const playersCountSpan = document.getElementById('playersCount');
+        const lotteryBalanceSpan = document.getElementById('lotteryBalance');
+        const lastWinnerSpan = document.getElementById('lastWinner');
+        const entryAmountInput = document.getElementById('entryAmount');
+        const participateBtn = document.getElementById('participateBtn');
+        const pickWinnerBtn = document.getElementById('pickWinnerBtn');
+        const getPlayersBtn = document.getElementById('getPlayersBtn');
+        const playersListDiv = document.getElementById('playersList');
+
+        const participateSpinner = document.getElementById('participateSpinner');
+        const pickWinnerSpinner = document.getElementById('pickWinnerSpinner');
+        const getPlayersSpinner = document.getElementById('getPlayersSpinner');
+
+        function showStatus(message) {
+            statusMessage.textContent = message;
+            statusMessage.classList.remove('hidden');
+            errorMessage.classList.add('hidden');
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.remove('hidden');
+            statusMessage.classList.add('hidden');
+        }
+
+        function hideMessages() {
+            statusMessage.classList.add('hidden');
+            errorMessage.classList.add('hidden');
+        }
+
+        function showSpinner(spinnerElement) {
+            spinnerElement.classList.remove('hidden');
+        }
+
+        function hideSpinner(spinnerElement) {
+            spinnerElement.classList.add('hidden');
+        }
+
+        async function connectWallet() {
+            hideMessages(); // Clear any previous status/error messages
+            connectError.classList.add('hidden'); // Hide specific connect error
+            if (typeof window.ethereum !== "undefined") {
+                try {
+                    // Request account access
+                    // Ethers.js v5 uses Web3Provider for window.ethereum
+                    provider = new ethers.providers.Web3Provider(window.ethereum);
+                    await provider.send("eth_requestAccounts", []);
+                    signer = provider.getSigner();
+                    mdlotteryContract = new ethers.Contract(MDLOTTERY_ADDRESS, MDLOTTERY_ABI, signer);
+
+                    const accounts = await provider.listAccounts(); // Get connected accounts
+                    const walletAddress = accounts[0]; // Get the first connected account
+                    walletAddressDisplay.innerText = "Connected: " + walletAddress.substring(0, 6) + "..." + walletAddress.substring(walletAddress.length - 4);
+                    console.log("Connected wallet:", walletAddress);
+
+                    showStatus("Connected to MetaMask!");
+                    connectWalletSection.classList.add('hidden'); // Hide connect section
+                    mainDAppContent.classList.remove('hidden'); // Show main DApp content
+
+                    // Display contract address
+                    contractAddressSpan.textContent = MDLOTTERY_ADDRESS;
+
+                    // Fetch initial data
+                    await updateUI();
+
+                    // Listen for account changes
+                    window.ethereum.on('accountsChanged', async (accounts) => {
+                        if (accounts.length === 0) {
+                            // User disconnected all accounts
+                            showError("MetaMask disconnected. Please connect your wallet.");
+                            connectWalletSection.classList.remove('hidden');
+                            mainDAppContent.classList.add('hidden');
+                            walletAddressDisplay.innerText = "Not connected";
+                        } else {
+                            showStatus("MetaMask account changed. Updating UI...");
+                            signer = provider.getSigner(); // Get new signer for the new account
+                            mdlotteryContract = new ethers.Contract(MDLOTTERY_ADDRESS, MDLOTTERY_ABI, signer); // Re-initialize contract with new signer
+                            walletAddressDisplay.innerText = "Connected: " + accounts[0].substring(0, 6) + "..." + accounts[0].substring(accounts[0].length - 4);
+                            await updateUI();
+                        }
+                    });
+
+                    // Listen for network changes
+                    window.ethereum.on('chainChanged', async (chainId) => {
+                        showStatus("MetaMask network changed. Please ensure you are on Hardhat Local (Chain ID 31337).");
+                        // You might want to re-initialize provider/signer/contract here if network changes are critical
+                        // For this DApp, we expect it to be on Hardhat Local.
+                        await updateUI(); // Update UI to reflect potential network-specific data
+                    });
+
+
+                    // Listen for events from the contract
+                    mdlotteryContract.on("PlayerParticipated", async (playerAddress, amountPaid) => {
+                        showStatus(`New player: ${playerAddress.substring(0, 6)}...${playerAddress.substring(playerAddress.length - 4)} entered with ${ethers.utils.formatEther(amountPaid)} ETH!`);
+                        await updateUI();
+                    });
+
+                    mdlotteryContract.on("WinnerPicked", async (winnerAddress, prizeAmount, randomIndex) => {
+                        showStatus(`Winner picked! ${winnerAddress.substring(0, 6)}...${winnerAddress.substring(winnerAddress.length - 4)} won ${ethers.utils.formatEther(prizeAmount)} ETH!`);
+                        await updateUI();
+                    });
+
+                    mdlotteryContract.on("LotteryReset", async () => {
+                        showStatus("Lottery has been reset for a new round!");
+                        await updateUI();
+                    });
+
+                } catch (error) {
+                    console.error("User denied account access or other error:", error);
+                    // Check for common MetaMask errors
+                    if (error.code === 4001) { // User rejected request
+                        showError("MetaMask connection rejected by user.");
+                    } else if (error.message.includes("could not detect network")) {
+                         showError("MetaMask: Could not detect network. Ensure Hardhat Local is configured correctly.");
+                    }
+                    else {
+                        showError("Failed to connect to MetaMask. Check console for details.");
+                    }
+                }
+            } else {
+                showError("MetaMask is not installed. Please install it to use this DApp.");
+                connectWalletBtn.disabled = true; // Disable button if MetaMask not found
+                connectWalletBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        async function updateUI() {
+            try {
+                // Fetch manager address
+                managerAddress = await mdlotteryContract.manager();
+                managerAddressSpan.textContent = managerAddress;
+
+                // Fetch players
+                const players = await mdlotteryContract.getPlayers();
+                playersCountSpan.textContent = players.length;
+                playersListDiv.innerHTML = players.length > 0
+                    ? players.map(p => `<p class="font-mono text-xs">${p}</p>`).join('')
+                    : '<p>No players yet.</p>';
+
+                // Fetch balance
+                const balance = await mdlotteryContract.getContractBalance();
+                lotteryBalanceSpan.textContent = `${ethers.utils.formatEther(balance)} ETH`;
+
+                // Fetch last winner
+                const lastWinner = await mdlotteryContract.winner();
+                lastWinnerSpan.textContent = lastWinner !== "0x0000000000000000000000000000000000000000" ? lastWinner : "N/A";
+
+                // Enable/disable pickWinner button based on current account being manager
+                const currentAccount = await signer.getAddress();
+                if (currentAccount.toLowerCase() === managerAddress.toLowerCase()) {
+                    pickWinnerBtn.disabled = false;
+                    pickWinnerBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                } else {
+                    pickWinnerBtn.disabled = true;
+                    pickWinnerBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+
+            } catch (error) {
+                console.error("Error updating UI:", error);
+                showError("Failed to fetch contract data. Is the local node running and contract deployed?");
+                // If contract data fetch fails, hide main DApp and show connect section again
+                mainDAppContent.classList.add('hidden');
+                connectWalletSection.classList.remove('hidden');
+                // Also, re-enable connect button if MetaMask is detected
+                if (typeof window.ethereum !== 'undefined') {
+                    connectWalletBtn.disabled = false;
+                    connectWalletBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            }
+        }
+
+        // Event Listeners for Buttons
+        connectWalletBtn.addEventListener('click', connectWallet); // Connect button listener
+
+        participateBtn.addEventListener('click', async () => {
+            hideMessages();
+            const amount = entryAmountInput.value;
+            if (!amount || parseFloat(amount) <= 1) {
+                showError("Please enter an amount greater than 1 ETH.");
+                return;
+            }
+
+            try {
+                showSpinner(participateSpinner);
+                participateBtn.disabled = true;
+
+                const tx = await mdlotteryContract.participate({
+                    value: ethers.utils.parseEther(amount)
+                });
+                await tx.wait(); // Wait for the transaction to be mined
+                showStatus(`Transaction sent! Waiting for confirmation... Tx Hash: ${tx.hash.substring(0, 6)}...`);
+                entryAmountInput.value = ''; // Clear input
+            } catch (error) {
+                console.error("Participate error:", error);
+                if (error.code === 4001) { // User denied transaction
+                    showError("Transaction denied by user.");
+                } else if (error.data && error.data.message) {
+                    // Attempt to parse custom error messages from revert reasons
+                    const revertReason = error.data.message.replace('reverted with reason string ', '');
+                    showError(`Transaction failed: ${revertReason}`);
+                } else {
+                    showError("Failed to participate in lottery. Check console for details.");
+                }
+            } finally {
+                hideSpinner(participateSpinner);
+                participateBtn.disabled = false;
+                await updateUI(); // Update UI after transaction
+            }
+        });
+
+        pickWinnerBtn.addEventListener('click', async () => {
+            hideMessages();
+            try {
+                showSpinner(pickWinnerSpinner);
+                pickWinnerBtn.disabled = true;
+
+                const tx = await mdlotteryContract.pickWinner();
+                await tx.wait(); // Wait for the transaction to be mined
+                showStatus(`Winner picking transaction sent! Tx Hash: ${tx.hash.substring(0, 6)}...`);
+            } catch (error) {
+                console.error("Pick winner error:", error);
+                if (error.code === 4001) { // User denied transaction
+                    showError("Transaction denied by user.");
+                } else if (error.data && error.data.message) {
+                    const revertReason = error.data.message.replace('reverted with reason string ', '');
+                    showError(`Transaction failed: ${revertReason}`);
+                } else {
+                    showError("Failed to pick winner. Check console for details.");
+                }
+            } finally {
+                hideSpinner(pickWinnerSpinner);
+                pickWinnerBtn.disabled = false;
+                await updateUI(); // Update UI after transaction
+            }
+        });
+
+        getPlayersBtn.addEventListener('click', async () => {
+            hideMessages();
+            showSpinner(getPlayersSpinner);
+            getPlayersBtn.disabled = true;
+            await updateUI();
+            hideSpinner(getPlayersSpinner);
+            getPlayersBtn.disabled = false;
+            showStatus("Players list refreshed.");
+        });
+
+        // Initialize DApp on window load
+        window.onload = () => {
+            // Initially hide the main DApp content
+            mainDAppContent.classList.add('hidden');
+            // Check for MetaMask presence and enable connect button or show error
+            if (typeof window.ethereum === 'undefined') {
+                showError("MetaMask is not installed. Please install it to use this DApp.");
+                connectWalletBtn.disabled = true;
+                connectWalletBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                // MetaMask is detected, enable the connect button
+                connectWalletBtn.disabled = false;
+                connectWalletBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                connectError.classList.add('hidden'); // Hide any previous connect error
+            }
+        };
+    </script>
+</body>
+</html>
